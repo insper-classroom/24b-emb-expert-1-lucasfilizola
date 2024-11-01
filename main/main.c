@@ -12,25 +12,17 @@
 #define JOYSTICK_X_PIN 26 // Joystick X no ADC0 (GPIO 26)
 #define JOYSTICK_Y_PIN 27 // Joystick Y no ADC1 (GPIO 27)
 
-// Variáveis para controlar a posição dos servos
-int currentMillisOne = 1600; // Posição inicial do servo 1 (valor médio)
-int currentMillisTwo = 1600; // Posição inicial do servo 2 (valor médio)
-const int servoMin = 400;
-const int servoMax = 2400;
-const int joystickMin = 0;     // Valor mínimo do joystick (0)
-const int joystickMax = 4095;  // Valor máximo do joystick (4095)
-
 // Definições para a conversão do joystick
-#define MAX_VALUE 4095       // Valor máximo do ADC para 12 bits
-#define SCALE_FACTOR 255     // Escala para mapeamento de -255 a +255
-#define DEAD_ZONE 100         // Tamanho da zona morta
-#define MAX_SERVO_INCREMENT 10 // Incremento máximo por leitura do joystick
+#define MAX_VALUE 4095          // Valor máximo do ADC para 12 bits
+#define SCALE_FACTOR 255        // Escala para mapeamento de -255 a +255
+#define DEAD_ZONE 100           // Tamanho da zona morta
+#define MAX_SERVO_INCREMENT 10  // Incremento máximo por leitura do joystick
 
 // Funções de configuração e utilitárias
 void setup() {
-    // Configuração dos pinos dos servos
-    setServo(SERVO_PIN_ONE, currentMillisOne);
-    setServo(SERVO_PIN_TWO, currentMillisTwo);
+    // Configuração dos pinos dos servos com valores iniciais fixos
+    setServo(SERVO_PIN_ONE, 1600); // Posição inicial do servo 1
+    setServo(SERVO_PIN_TWO, 1600); // Posição inicial do servo 2
 
     // Inicialização do ADC para leitura analógica
     adc_init();
@@ -65,8 +57,16 @@ int mapValue(int value, int in_min, int in_max, int out_min, int out_max) {
     return (value - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
 
-// Tarefas FreeRTOS
+// Tarefa FreeRTOS para controle dos servos
 void vTaskServoControl(void *pvParameters) {
+    // Variáveis locais estáticas para manter o estado entre as iterações
+    static int currentMillisOne = 1600; // Posição inicial do servo 1
+    static int currentMillisTwo = 1600; // Posição inicial do servo 2
+
+    // Constantes locais
+    const int servoMin = 400;
+    const int servoMax = 2400;
+
     while (1) {
         // Leitura dos valores do joystick
         int xValue = readJoystick(0); // Eixo X do joystick (canal 0)
@@ -97,6 +97,7 @@ void vTaskServoControl(void *pvParameters) {
     }
 }
 
+// Tarefa FreeRTOS para leitura do sensor e envio via UART
 void vTaskSensorRead(void *pvParameters) {
     while (1) {
         // Leitura do sensor adicional
